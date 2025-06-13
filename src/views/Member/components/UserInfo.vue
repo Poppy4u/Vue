@@ -1,19 +1,27 @@
 <script setup>
-// 导入pinia中的数据 
-import {useUserStore} from "@/stores/user.js"
-import {getLikeListAPI} from "@/apis/user.js"
-import { onMounted ,ref} from "vue"
-import GoodsItem from "@/views/Home/components/Goodsitem.vue"
-const  userStore = useUserStore()
+import { useUserStore } from "@/stores/user.js";
+import { ref } from "vue";
+const userStore = useUserStore();
 
-// 在这里拿到喜欢列表的数据
-const likeList = ref({})
-const getLikeList = async ()=>{
-  const res = await getLikeListAPI({limit:4})
-  likeList.value = res.result
-}
+const editing = ref(false);
+const newName = ref("");
 
-onMounted(()=>getLikeList())
+// 开始编辑用户名
+const startEdit = () => {
+  editing.value = true;
+  newName.value = userStore.userInfo.username;
+};
+// 保存用户名
+const saveEdit = async () => {
+  if (newName.value && newName.value !== userStore.userInfo.username) {
+    const success = await userStore.updateUserName(newName.value);
+    if (success) {
+      editing.value = false;
+    }
+  } else {
+    editing.value = false; // 没有变化直接退出编辑
+  }
+};
 </script>
 
 <template>
@@ -21,10 +29,19 @@ onMounted(()=>getLikeList())
     <!-- 用户信息 -->
     <div class="user-meta">
       <div class="avatar">
-        <img :src="userStore.userInfo?.avatar" />
+        <img :src="userStore.userInfo.user_img" alt="用户头像" />
       </div>
-      <h4>{{ userStore.userInfo?.account }}</h4>
+      <h4 v-if="!editing">
+        {{ userStore.userInfo.username }}
+        <button @click="startEdit" style="margin-left: 10px;">编辑</button>
+      </h4>
+      <div v-else>
+        <input v-model="newName" style="margin-right: 8px;" />
+        <button @click="saveEdit">保存</button>
+        <button @click="editing = false" style="margin-left: 4px;">取消</button>
+      </div>
     </div>
+    <!-- 下面可保留你的猜你喜欢等内容 -->
     <div class="item">
       <a href="javascript:;">
         <span class="iconfont icon-hy"></span>
@@ -40,13 +57,15 @@ onMounted(()=>getLikeList())
       </a>
     </div>
   </div>
+  <!-- 下面是你页面其它内容 -->
   <div class="like-container">
     <div class="home-panel">
       <div class="header">
-        <h4 data-v-bcb266e0="">猜你喜欢</h4>
+        <h4>猜你喜欢</h4>
       </div>
       <div class="goods-list">
-        <GoodsItem v-for="good in likeList" :key="good.id" :good="good" />
+        <!-- 这里可根据你项目实际情况保留或修改 -->
+        <!-- <GoodsItem v-for="good in likeList" :key="good.id" :good="good" /> -->
       </div>
     </div>
   </div>
@@ -56,7 +75,7 @@ onMounted(()=>getLikeList())
 .home-overview {
   height: 132px;
   background: url(@/assets/images/center-bg.png) no-repeat center / cover;
-  display:flex;
+  display: flex;
 
   .user-meta {
     flex: 1;
@@ -81,6 +100,14 @@ onMounted(()=>getLikeList())
       font-size: 18px;
       font-weight: normal;
       color: white;
+    }
+    input {
+      padding-left: 26px;
+      font-size: 18px;
+    }
+    button {
+      font-size: 14px;
+      margin-left: 4px;
     }
   }
 
@@ -118,9 +145,6 @@ onMounted(()=>getLikeList())
 
 .home-panel {
   background-color: #fff;
-  padding: 0 20px;
-  margin-top: 20px;
-  height: 400px;
 
   .header {
     height: 66px;
@@ -134,7 +158,6 @@ onMounted(()=>getLikeList())
       font-size: 22px;
       font-weight: 400;
     }
-
   }
 
   .goods-list {
